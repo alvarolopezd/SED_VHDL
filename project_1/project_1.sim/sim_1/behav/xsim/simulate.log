@@ -1,5 +1,5 @@
 Vivado Simulator 2020.1
 Time resolution is 1 ps
 Failure: [SUCCESS]: simulation finished.
-Time: 50 s  Iteration: 0  Process: /FSM_tb/line__153  File: D:/proyectos_JAM/project_1/project_1.srcs/sim_1/new/testbench_JAM.vhd
-$finish called at time : 50 s : File "D:/proyectos_JAM/project_1/project_1.srcs/sim_1/new/testbench_JAM.vhd" Line 158
+Time: 50 s  Iteration: 0  Process: /TOP_tb/line__147  File: D:/proyectos_JAM/project_1/project_1.srcs/sim_1/new/TOP_tb.vhd
+$finish called at time : 50 s : File "D:/proyectos_JAM/project_1/project_1.srcs/sim_1/new/TOP_tb.vhd" Line 152

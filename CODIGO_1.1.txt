@@ -5,10 +5,10 @@ use IEEE.numeric_std.all;
 use IEEE.std_logic_unsigned.all;
 
 -- S0 ESTADO ESPERA
--- S1 1º DIGITO
--- S2 2º DIGITO
--- S3 3º DIGITO
--- S4 4º DIGITO
+-- S1 1Âº DIGITO
+-- S2 2Âº DIGITO
+-- S3 3Âº DIGITO
+-- S4 4Âº DIGITO
 -- S5 COMPROBACION
 -- S6 ACIERTO
 -- S7 ERROR. QUEDAN INTENTOS
@@ -23,10 +23,13 @@ entity FSM is
     --OK_BOTON : in std_logic; -- Boton comprobar si es correcto
     CLK : in std_logic; -- Reloj
 	-- SALIDAS
+    DISPLAY : out std_logic_vector(6 downto 0); -- Display de 7 segmentos                     --ESTA ME LA PUEDO QUITAR
+    ANODE: out std_logic_vector(3 downto 0); -- Activacion de cada uno de los displays        --ESTA ME LA PUEDO QUITAR
     LED_ERROR: out std_logic; -- LED DE ERROR
     LED_FATAL_ERROR: out std_logic; -- LED DE ERROR
     LED_ACIERTO: out std_logic; -- LED DE ACIERTO
-    VAL_DISPLAY_TOTAL :out std_logic_vector (27 downto 0);
+    selecion: out std_logic_vector(1 downto 0);
+    VAL_DISPLAY :out std_logic_vector (27 downto 0);
     actual_state: out std_logic_vector(3 downto 0)		--Estado real.
 );
 end FSM;
@@ -36,13 +39,15 @@ architecture behavioral of FSM is
     type STATES is (S0, S1, S2, S3, S4, S5, S6, S7, S8);
     signal current_state: STATES:=S0;
     signal next_state: STATES;
-    signal correct_pasw : std_logic_vector(15 downto 0) := "0001001000110100"; -- CONTRASEÑA CORRECTA 0001 0010 0011 0100 (1 2 3 4)
-    signal current_pasw : std_logic_vector(15 downto 0):= "0000000000000000"; -- VECTOR DONDE ALMACENO CONTRASEÑA QUE EL USARUAIO TECLEA
+    signal correct_pasw : std_logic_vector(15 downto 0) := "0001001000110100"; -- CONTRASEÃ‘A CORRECTA 0001 0010 0011 0100 (1 2 3 4)
+    signal current_pasw : std_logic_vector(15 downto 0):= "0000000000000000"; -- VECTOR DONDE ALMACENO CONTRASEÃ‘A QUE EL USARUAIO TECLEA
     signal digito_BCD: std_logic_vector(3 downto 0); -- Reocger valor en binario BCD del teclado
     signal cnt_error: integer:=0; -- CONTADOR DE NUMERO DE ERRORES QUE LLEVO
     
----Manejo y actualización de display.
+---Manejo y actualizaciÃ³n de display.
     signal refresh_counter: integer range 0 to 900000;	--Contador de ciclos.
+    signal selection: std_logic_vector (1 downto 0):= "00";	--Seleccion de cifra. 00 01 10 11 00
+    signal selected_display: std_logic_vector (3 downto 0):="0000";	--Display seleccionado.
     signal valor_display: std_logic_vector (6 downto 0); --Para saber el numero en singular que imprime el display
     signal valor_display_total :std_logic_vector (27 downto 0); --para saber el numero total en display
   begin
@@ -253,8 +258,50 @@ begin
     end case;
 end process;
 
-VAL_DISPLAY_TOTAL <= valor_display_total;
+
+--ACTUALIZAR DISPLAY.
+---Comprueba que ha transcurrido el tiempo de actalizaciÃ³n en la cifra presente. Cuando ya ha transcurrido todo el tiempo salta a hacer lo mismo con la cifra siguiente.
+clock_counter: process(CLK)   
+begin
+	if CLK'event and CLK='1' then 
+    	if refresh_counter < 2 then  --a menos numero menor tiempo de espera para cambiar el display
+        	refresh_counter <= refresh_counter+1;
+      	else
+      	    if selection ="11" then
+      	    selection <= "00";
+      	    refresh_counter <= 0;
+      	    else
+        	selection <= selection +1;
+            refresh_counter <= 0;
+            end if;
+        end if;
+    end if;
+end process;
+
+
+--MOSTRAR DISPLAY.
+show_display: process(selection)
+begin
+	--Elegir digito del display.
+    case selection is
+		when "00" => selected_display <= "0111";  --Cifra 0 del display activada.
+        when "01" => selected_display <= "1011";  --Cifra 1 del display activada.
+      	when "10" => selected_display <= "1101";  --Cifra 2 del display activada.
+        when "11" => selected_display <= "1110";  --Cifra 3 del display activada.
+        when others => selected_display <= "1111";	--Todas las cifras del display apagadas.
+    end case;
+    
+    case selected_display is         --SIEMPRE IMPRIME EL NUMERO ACTUAL INTRODUCIDO
+    	when "1110" => DISPLAY <= valor_display_total (27 downto 21);--(6 downto 0);  
+        when "1101" => DISPLAY <= valor_display_total (6 downto 0);--(13 downto 7);
+        when "1011" => DISPLAY <= valor_display_total (13 downto 7);--(20 downto 14);
+        when "0111" => DISPLAY <= valor_display_total (20 downto 14);--(27 downto 21);
+        when others => DISPLAY <= "1111111" ;
+    end case;
+end process;
+
+ANODE <= selected_display;
+selecion <= selection;
+VAL_DISPLAY <= valor_display_total;
 
 end behavioral;
-
-
